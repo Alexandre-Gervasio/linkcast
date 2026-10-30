@@ -1,5 +1,6 @@
 {
   "name": "linkcast",
+  "email": "alexandrework010@gmail.com",
   "version": "0.1.0",
   "description": "LinkCast - transmissão de vídeo WebRTC portátil",
   "main": "src/main.js",
