@@ -54,7 +54,7 @@ jobs:
     name: Create GitHub Release
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     permissions:
       contents: write
@@ -65,6 +65,9 @@ jobs:
         with:
           path: artifacts
 
+      - name: Wait for GitHub API rate limit window
+        run: sleep 180
+
       - name: Publish Release
         uses: softprops/action-gh-release@v2
         env:
@@ -72,3 +75,4 @@ jobs:
         with:
           files: artifacts/**/*
           generate_release_notes: true
+          preserve_order: true
