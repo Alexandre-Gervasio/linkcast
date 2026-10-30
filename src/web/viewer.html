@@ -1,0 +1,107 @@
+<!doctype html><meta charset="utf-8" /><meta
+  name="viewport"
+  content="width=device-width,initial-scale=1"
+/>
+<title>LinkCast</title>
+<style>
+  html,
+  body {
+    margin: 0;
+    height: 100%;
+    background: #000;
+  }
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  #m {
+    position: fixed;
+    top: 10px;
+    left: 12px;
+    color: #fff;
+    font: 14px system-ui;
+    opacity: 0.8;
+  }
+</style>
+
+<div id="m">Conectando…</div>
+
+<video id="v" autoplay playsinline muted></video>
+
+<script src="rtc.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const room = params.get("room") || "main";
+  const playAudio = params.get("audio") === "1";
+  const v = document.getElementById("v"),
+    m = document.getElementById("m");
+  v.muted = true;
+  let pc = null;
+  const wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
+  Signal(wsProtocol + "//" + location.host, {
+    open: (s) => {
+      if (pc) pc.close();
+      pc = null;
+      s.send({ t: "join", role: "viewer", room });
+    },
+    error: (e) => {
+      m.style.display = "";
+      m.textContent = e.message + " Verifique a rede e o certificado HTTPS.";
+    },
+    messageError: (e) => {
+      m.style.display = "";
+      m.textContent = "Falha ao negociar vídeo: " + e.message;
+    },
+    msg: async (d, s) => {
+      if (d.t === "signal") {
+        if (!pc) {
+          pc = new RTCPeerConnection(RTC_CONFIG);
+          pc.oniceconnectionstatechange = () => {
+            if (pc.iceConnectionState === "failed")
+              m.textContent =
+                "Falha de conexão de vídeo. Verifique a rede Wi-Fi e o firewall do computador.";
+          };
+          pc.onicecandidate = (e) =>
+            e.candidate &&
+            s.send({ t: "signal", to: "host", data: { ice: e.candidate } });
+          pc.ontrack = (e) => {
+            v.srcObject = e.streams[0];
+            v.play()
+              .then(() => {
+                if (playAudio) {
+                  v.muted = false;
+                  m.style.display = "none";
+                } else
+                  m.textContent = "Ao vivo. Toque na tela para ativar o áudio.";
+              })
+              .catch(() => {
+                m.textContent =
+                  "Ao vivo. Toque na tela para iniciar o vídeo e ativar o áudio.";
+              });
+          };
+        }
+        await applySignal(pc, d.data, (x) =>
+          s.send({ t: "signal", to: "host", data: x }),
+        );
+      }
+      if (d.t === "host-gone") {
+        m.style.display = "";
+        m.textContent = "Aguardando transmissão…";
+        if (pc) pc.close();
+        pc = null;
+      }
+    },
+  });
+  document.onclick = () => {
+    v.muted = false;
+    v.play()
+      .then(() => {
+        m.style.display = "none";
+      })
+      .catch(() => {
+        m.textContent =
+          "Não foi possível iniciar o vídeo. Verifique a conexão.";
+      });
+  };
+</script>

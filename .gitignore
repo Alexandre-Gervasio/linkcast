@@ -1,0 +1,37 @@
+﻿# Dependências
+node_modules/
+
+# Compilações e distribuição
+dist/
+release/
+out/
+
+# Dados locais do aplicativo
+LinkCastData/
+**/LinkCastData/
+
+# Certificados e chaves privadas
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Configurações locais
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+
+cert.json

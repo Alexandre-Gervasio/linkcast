@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>LinkCast</title>
+    <style>
+      :root {
+        --bg: #12151c;
+        --panel: #1a1f29;
+        --line: #2a3140;
+        --tx: #e8ebf2;
+        --mut: #8f98ab;
+        --ac: #3ecfd1;
+        --red: #e5484d;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        height: 100vh;
+        display: grid;
+        grid-template-columns: 250px 1fr 270px;
+        background: var(--bg);
+        color: var(--tx);
+        font:
+          13px system-ui,
+          sans-serif;
+      }
+      aside {
+        background: var(--panel);
+        padding: 14px;
+        overflow: auto;
+        border-right: 1px solid var(--line);
+      }
+      aside.r {
+        border-right: 0;
+        border-left: 1px solid var(--line);
+      }
+      main {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        min-width: 0;
+      }
+      #stage {
+        position: relative;
+        width: min(100%, calc((100vh - 32px) * 16 / 9));
+        aspect-ratio: 16/9;
+        box-shadow: 0 0 0 1px var(--line);
+      }
+      #stage canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      #ov {
+        cursor: move;
+      }
+      h3 {
+        margin: 16px 0 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--mut);
+      }
+      h3:first-child {
+        margin-top: 0;
+      }
+      button,
+      select {
+        width: 100%;
+        margin: 3px 0;
+        padding: 8px 10px;
+        border-radius: 6px;
+        border: 1px solid var(--line);
+        background: #222836;
+        color: var(--tx);
+        font: inherit;
+        text-align: left;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: var(--ac);
+      }
+      button:focus-visible,
+      select:focus-visible {
+        outline: 2px solid var(--ac);
+      }
+      button.on {
+        background: var(--red);
+        border-color: var(--red);
+      }
+      .layer,
+      .src {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 6px 8px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        margin: 3px 0;
+        cursor: pointer;
+      }
+      .layer.sel {
+        border-color: var(--ac);
+      }
+      .layer span,
+      .src span {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .layer b {
+        color: var(--mut);
+        padding: 0 3px;
+      }
+      .src img {
+        width: 64px;
+        height: 36px;
+        object-fit: cover;
+        border-radius: 3px;
+      }
+      small {
+        display: block;
+        color: var(--mut);
+        word-break: break-all;
+        line-height: 1.5;
+        margin: 4px 0;
+      }
+      code {
+        display: block;
+        color: var(--mut);
+        font:
+          11px ui-monospace,
+          monospace;
+        overflow-wrap: anywhere;
+        margin: 5px 0;
+      }
+      .share-title {
+        margin: 12px 0 4px;
+        color: var(--tx);
+        font-weight: 600;
+      }
+      .share-actions {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 4px;
+      }
+      .share-actions button {
+        width: auto;
+        text-align: center;
+        padding: 7px 3px;
+        font-size: 11px;
+      }
+      .volume-control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 6px 0;
+        color: var(--mut);
+      }
+      .volume-control input {
+        flex: 1;
+        min-width: 0;
+        accent-color: var(--ac);
+      }
+      .volume-control output {
+        min-width: 36px;
+        text-align: right;
+        color: var(--tx);
+        font-variant-numeric: tabular-nums;
+      }
+      #status {
+        color: var(--ac);
+      }
+    </style>
+  </head>
+  <body>
+    <aside>
+      <h3>Adicionar fonte</h3>
+      <select id="camSel"></select>
+      <button id="addCam">Câmera</button>
+      <button id="addScr">Tela ou janela</button>
+      <div id="srcList"></div>
+      <h3>Camadas</h3>
+      <div id="layers"></div>
+    </aside>
+    <main>
+      <div id="stage">
+        <canvas id="cv" width="1920" height="1080"></canvas
+        ><canvas id="ov" width="1920" height="1080"></canvas>
+      </div>
+    </main>
+    <aside class="r">
+      <h3>Resolução da saída</h3>
+      <select id="res">
+        <option value="1280x720">1280×720</option>
+        <option value="1920x1080">1920×1080</option>
+        <option value="2560x1440">2560×1440</option>
+        <option value="3840x2160" selected>3840×2160 (máxima)</option>
+      </select>
+      <h3>Controles</h3>
+      <button id="rec">Gravar</button>
+      <button id="mic">Microfone: ligado</button>
+      <label class="volume-control" for="volume">
+        <span>Volume geral</span>
+        <input
+          id="volume"
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          value="100"
+          aria-label="Volume geral do áudio transmitido e gravado"
+        />
+        <output id="volumeValue" for="volume">100%</output>
+      </label>
+      <h3>Camada selecionada</h3>
+      <button id="fit">Ajustar à tela</button>
+      <button id="fill">Preencher a tela</button>
+      <button id="up">Trazer para frente</button>
+      <small
+        >Arraste para mover. Arraste os cantos para redimensionar (Shift =
+        esticar livremente). Para máxima qualidade, mantenha 3840×2160 e
+        configure a Browser Source do OBS em 3840×2160 a 60 FPS.</small
+      >
+      <h3>Saída e links</h3>
+      <small id="links"></small>
+      <small id="status"></small>
+    </aside>
+    <script src="../web/rtc.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

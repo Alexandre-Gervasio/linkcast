@@ -1,0 +1,43 @@
+{
+  "name": "linkcast",
+  "version": "0.1.0",
+  "description": "LinkCast - transmissão de vídeo WebRTC portátil",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux",
+    "build:mac": "electron-builder --mac"
+  },
+  "dependencies": {
+    "selfsigned": "2.4.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.linkcast.app",
+    "productName": "LinkCast",
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "portable",
+      "signAndEditExecutable": false
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "AudioVideo"
+    },
+    "mac": {
+      "target": "zip",
+      "extendInfo": {
+        "NSCameraUsageDescription": "LinkCast usa a câmera para transmitir vídeo.",
+        "NSMicrophoneUsageDescription": "LinkCast usa o microfone para transmitir áudio."
+      }
+    }
+  }
+}
