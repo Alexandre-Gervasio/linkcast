@@ -40,7 +40,8 @@
     },
     "mac": {
       "target": [
-        "dmg"
+        "dmg",
+        "zip"
       ],
       "extendInfo": {
         "NSCameraUsageDescription": "LinkCast usa a câmera para transmitir vídeo.",

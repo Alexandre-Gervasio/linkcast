@@ -18,11 +18,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-latest
+          - os: windows-2022
             target: win
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             target: linux
-          - os: macos-latest
+          - os: macos-15
             target: mac
 
     steps:
@@ -32,7 +32,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies

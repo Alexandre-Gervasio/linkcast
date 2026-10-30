@@ -6,7 +6,5 @@ contextBridge.exposeInMainWorld("lc", {
   recChunk: (b) => ipcRenderer.invoke("rec-chunk", b),
   recStop: () => ipcRenderer.invoke("rec-stop"),
   copyLink: (value) => ipcRenderer.invoke("copy-link", value),
-  shareLink: (service, value) =>
-    ipcRenderer.invoke("share-link", service, value),
   onShortcut: (cb) => ipcRenderer.on("shortcut", (_, a) => cb(a)),
 });

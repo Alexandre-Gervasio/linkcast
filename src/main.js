@@ -6,11 +6,9 @@ const {
   desktopCapturer,
   session,
   clipboard,
-  shell,
 } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const network = require("net");
 const { startServer } = require("./server");
 
 function writableDirectory(dir) {
@@ -120,26 +118,6 @@ ipcMain.handle("copy-link", (_, value) => {
   )
     throw new Error("URL inválida para copiar.");
   clipboard.writeText(value);
-});
-
-ipcMain.handle("share-link", async (_, service, value) => {
-  if (!["whatsapp", "telegram"].includes(service) || typeof value !== "string")
-    throw new Error("Serviço ou URL de compartilhamento inválido.");
-  const url = new URL(value);
-  if (
-    url.protocol !== "https:" ||
-    network.isIP(url.hostname) !== 4 ||
-    !["/viewer.html", "/push.html"].includes(url.pathname) ||
-    !Number.isInteger(Number(url.port)) ||
-    Number(url.port) < 1 ||
-    Number(url.port) > 65535
-  )
-    throw new Error("URL de compartilhamento inválida.");
-  const text =
-    service === "whatsapp"
-      ? `https://wa.me/?text=${encodeURIComponent(url.href)}`
-      : `https://t.me/share/url?url=${encodeURIComponent(url.href)}&text=${encodeURIComponent("LinkCast ao vivo")}`;
-  await shell.openExternal(text);
 });
 
 ipcMain.handle("sources", async () =>

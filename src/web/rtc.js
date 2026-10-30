@@ -1,4 +1,4 @@
-// Compartilhado entre app (host), viewer e push
+// Compartilhado entre o aplicativo host e o viewer.
 window.RTC_CONFIG = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 const pendingIce = new WeakMap();
 

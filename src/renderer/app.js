@@ -350,42 +350,27 @@ $("volume").oninput = () =>
   );
 lc.onShortcut((a) => ({ record: toggleRec, mute: toggleMic })[a]());
 
-/* ---------- Rede: espectadores e convidados ---------- */
+/* ---------- Rede: espectadores ---------- */
 const peers = {};
-function addShareGroup(container, title, url, actions) {
+function addLocalLink(container, title, url) {
   const heading = document.createElement("div");
-  heading.className = "share-title";
+  heading.className = "local-link-title";
   heading.textContent = title;
   const value = document.createElement("code");
   value.textContent = url;
-  const buttons = document.createElement("div");
-  buttons.className = "share-actions";
-  for (const [label, action] of actions) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = label;
-    button.onclick = async () => {
-      try {
-        await action(url);
-        status(
-          label === "Copiar link"
-            ? "Link copiado para a área de transferência."
-            : `Abrindo compartilhamento via ${label}…`,
-        );
-      } catch (error) {
-        status(`Não foi possível ${label.toLowerCase()}: ${error.message}`);
-      }
-    };
-    buttons.appendChild(button);
-  }
-  container.append(heading, value, buttons);
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = "Copiar link";
+  button.onclick = async () => {
+    try {
+      await lc.copyLink(url);
+      status("Link copiado para a área de transferência.");
+    } catch (error) {
+      status("Não foi possível copiar o link: " + error.message);
+    }
+  };
+  container.append(heading, value, button);
 }
-
-const shareActions = [
-  ["WhatsApp", (url) => lc.shareLink("whatsapp", url)],
-  ["Telegram", (url) => lc.shareLink("telegram", url)],
-  ["Copiar link", (url) => lc.copyLink(url)],
-];
 
 lc.info()
   .then((info) => {
@@ -396,11 +381,10 @@ lc.info()
     const browserSource = `http://127.0.0.1:${info.localPort}/viewer.html?audio=1`;
     const linkPanel = $("links");
     linkPanel.replaceChildren();
-    addShareGroup(
+    addLocalLink(
       linkPanel,
       "OBS · Browser Source (neste computador)",
       browserSource,
-      [["Copiar link", (url) => lc.copyLink(url)]],
     );
     const networkAddresses = (
       info.ips || [{ name: "Rede", address: info.ip }]
@@ -408,13 +392,13 @@ lc.info()
     if (!networkAddresses.length) {
       const help = document.createElement("small");
       help.textContent =
-        "Nenhum endereço de rede encontrado. Conecte este computador ao Wi-Fi ou à rede local para compartilhar com celulares.";
+        "Nenhum endereço de rede encontrado. Conecte este computador ao Wi-Fi para disponibilizar a transmissão na rede local.";
       linkPanel.appendChild(help);
     } else {
       const network = document.createElement("select");
       network.setAttribute(
         "aria-label",
-        "Adaptador de rede para compartilhamento",
+        "Adaptador de rede para espectadores",
       );
       for (const item of networkAddresses) {
         const option = document.createElement("option");
@@ -423,32 +407,25 @@ lc.info()
         network.appendChild(option);
       }
       const networkLabel = document.createElement("div");
-      networkLabel.className = "share-title";
-      networkLabel.textContent = "Rede para celular";
+      networkLabel.className = "local-link-title";
+      networkLabel.textContent = "Espectadores na rede local";
       linkPanel.append(networkLabel, network);
       const sharedLinks = document.createElement("div");
       linkPanel.appendChild(sharedLinks);
       const renderNetworkLinks = () => {
         sharedLinks.replaceChildren();
         const base = `https://${network.value}:${info.port}`;
-        addShareGroup(
+        addLocalLink(
           sharedLinks,
           "Assistir transmissão",
           `${base}/viewer.html`,
-          shareActions,
-        );
-        addShareGroup(
-          sharedLinks,
-          "Convidar para enviar vídeo",
-          `${base}/push.html`,
-          shareActions,
         );
       };
       network.onchange = renderNetworkLinks;
       renderNetworkLinks();
       const help = document.createElement("small");
       help.textContent =
-        "Celular e computador precisam estar no mesmo Wi-Fi. Na primeira visita, aceite o aviso HTTPS. Se o celular não abrir, permita o LinkCast na rede privada/firewall e desative o isolamento de dispositivos no Wi-Fi.";
+        "Os espectadores precisam estar na mesma rede Wi-Fi. Na primeira visita, aceite o aviso HTTPS. Se o link não abrir, permita o LinkCast na rede privada/firewall e desative o isolamento de dispositivos no Wi-Fi.";
       linkPanel.appendChild(help);
     }
     Signal(`wss://127.0.0.1:${info.port}`, {
@@ -460,52 +437,34 @@ lc.info()
           pc.onicecandidate = (e) =>
             e.candidate &&
             s.send({ t: "signal", to: d.id, data: { ice: e.candidate } });
-          if (d.role === "viewer") {
-            const quality = [];
-            out.getTracks().forEach((track) => {
-              const sender = pc.addTrack(track, out);
-              if (track.kind === "video") quality.push(setHighQuality(sender));
-            });
-            await Promise.all(
-              quality.map((configure) =>
-                configure.catch((error) => {
-                  status(
-                    "Não foi possível aplicar a taxa máxima de qualidade: " +
-                      error.message,
-                  );
-                }),
-              ),
-            );
-            await pc.setLocalDescription(await pc.createOffer());
-            s.send({
-              t: "signal",
-              to: d.id,
-              data: { sdp: pc.localDescription },
-            });
-          } else {
-            pc.oniceconnectionstatechange = () => {
-              if (pc.iceConnectionState === "failed")
+          const quality = [];
+          out.getTracks().forEach((track) => {
+            const sender = pc.addTrack(track, out);
+            if (track.kind === "video") quality.push(setHighQuality(sender));
+          });
+          await Promise.all(
+            quality.map((configure) =>
+              configure.catch((error) => {
                 status(
-                  "Convidado sem conexão. Verifique se está no mesmo Wi-Fi e se a rede permite comunicação entre dispositivos.",
+                  "Não foi possível aplicar a taxa máxima de qualidade: " +
+                    error.message,
                 );
-            };
-            pc.ontrack = (e) => {
-              if (e.track.kind === "video" && !pc.L) {
-                pc.L = addLayer("Convidado " + d.id, e.streams[0]);
-                pc.L.stream = null;
-              }
-              if (e.track.kind === "audio") mixAudio(e.streams[0]);
-            };
-          }
+              }),
+            ),
+          );
+          await pc.setLocalDescription(await pc.createOffer());
+          s.send({
+            t: "signal",
+            to: d.id,
+            data: { sdp: pc.localDescription },
+          });
         }
         if (d.t === "signal" && peers[d.from])
           await applySignal(peers[d.from], d.data, (x) =>
             s.send({ t: "signal", to: d.from, data: x }),
           );
         if (d.t === "gone" && peers[d.id]) {
-          const pc = peers[d.id];
-          pc.close();
-          if (pc.L) removeLayer(pc.L);
+          peers[d.id].close();
           delete peers[d.id];
         }
       },

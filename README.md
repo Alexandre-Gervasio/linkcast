@@ -4,13 +4,13 @@ Aplicativo de transmissão de vídeo via WebRTC. Os pacotes de distribuição in
 
 ## Baixar e executar
 
-Os pacotes para Windows, Linux e macOS são publicados como artefatos da ação **Build desktop apps** na aba **Actions** do GitHub. Cada sistema precisa de seu próprio pacote:
+Os pacotes para Windows, Linux e macOS são publicados como artefatos da ação **Build and Release LinkCast** na aba **Actions** do GitHub. Cada sistema precisa de seu próprio pacote:
 
 - Windows: executável portátil `.exe`.
-- Linux: imagem `.AppImage`.
-- macOS: arquivo `.zip` com o aplicativo `.app`.
+- Linux: imagem `.AppImage` ou pacote `.deb`.
+- macOS: instalador `.dmg` ou arquivo `.zip` com o aplicativo `.app`.
 
-No macOS, o primeiro uso pode exigir autorização do sistema para abrir um aplicativo baixado da internet. A captura de câmera, microfone ou tela também depende das permissões de privacidade do sistema. O AppImage pode depender de bibliotecas gráficas já fornecidas pela distribuição Linux.
+No macOS, o primeiro uso pode exigir autorização do sistema para abrir um aplicativo baixado da internet. A captura da câmera, do microfone ou da tela também depende das permissões de privacidade do sistema. O AppImage pode depender de bibliotecas gráficas já fornecidas pela distribuição Linux.
 
 ## Compilar a partir do código
 
@@ -29,16 +29,14 @@ npm run build:linux
 npm run build:mac
 ```
 
-Os pacotes de cada sistema são compilados em runners próprios na ação de build.
+Os pacotes de cada sistema são compilados em runners próprios, com versões fixas de Linux e macOS para manter os ambientes de build estáveis.
 
 ## Uso
 
-- Fontes: câmera, tela/janela ou convidados (celular abre `/push.html`).
+- Fontes: câmera conectada ao computador ou tela/janela.
 - OBS: adicione uma fonte **Browser Source**, use a URL local exibida no aplicativo e configure a fonte para **3840×2160 a 60 FPS** para a saída máxima. A qualidade real depende da câmera, da rede e do hardware de codificação.
-- O controle **Volume geral** ajusta o áudio transmitido e gravado (microfone e convidados); o botão do microfone continua controlando apenas o microfone local.
-- Espectadores: abram a URL HTTPS `/viewer.html` exibida no aplicativo.
-- Convidados: celulares abrem `/push.html` para enviar câmera e áudio; na primeira visita, precisam aceitar o aviso do certificado autoassinado.
-- Os botões oferecem compartilhamento por WhatsApp, Telegram e cópia do link. Essas URLs são locais: o destinatário precisa estar na mesma rede Wi-Fi; compartilhar pela internet exige hospedagem e relay público, que não fazem parte deste aplicativo. O firewall deve permitir o LinkCast em redes privadas e o roteador não pode bloquear a comunicação entre dispositivos.
+- O controle **Volume geral** ajusta o áudio transmitido e gravado; o botão do microfone controla apenas o microfone local.
+- Espectadores podem abrir a URL HTTPS `/viewer.html` exibida no aplicativo. Os links são acessíveis apenas na rede local; o destinatário precisa estar na mesma rede Wi-Fi. O LinkCast não oferece compartilhamento por redes sociais nem entrada de câmeras remotas. O firewall deve permitir o LinkCast em redes privadas e o roteador não pode bloquear a comunicação entre dispositivos.
 - Atalhos globais: Ctrl/Cmd+Shift+F9 grava e F10 silencia. Personalize em `LinkCastData/shortcuts.json`, por exemplo `{"record":"Alt+F9"}`.
 
 Gravações e dados são guardados junto ao executável quando a pasta é gravável (modo portátil); caso contrário, são guardados na pasta de dados do usuário do sistema.

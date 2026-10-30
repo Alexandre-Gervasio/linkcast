@@ -1,4 +1,4 @@
-// Servidores embutidos: HTTPS para a rede, HTTP local para OBS e WebSocket de sinalização WebRTC
+// Servidores embutidos: HTTPS para espectadores na rede, HTTP local para OBS e WebSocket de sinalização WebRTC
 const http = require("http");
 const https = require("https");
 const fs = require("fs");
@@ -29,7 +29,7 @@ function lanIPs() {
   return found.length ? found : [{ name: "Localhost", address: "127.0.0.1" }];
 }
 
-// Certificado autoassinado (HTTPS é obrigatório para câmera no celular)
+// Certificado autoassinado para acesso HTTPS dos espectadores na rede local.
 function getCert(dir, ips) {
   const f = path.join(dir, "cert.json");
   const addresses = ips.map((item) => item.address);
@@ -122,17 +122,18 @@ function startServer(port0, dataDir) {
             r.host = ws;
             ws.room = m.room;
             ws.id = "host";
-            r.peers.forEach((p, id) =>
-              send(ws, { t: "peer", id, role: p.role }),
-            );
+            r.peers.forEach((p, id) => send(ws, { t: "peer", id }));
           } else if (m.t === "join") {
+            if (m.role !== "viewer") {
+              ws.close(1008, "Only viewers may join.");
+              return;
+            }
             const r = room(m.room);
             ws.room = m.room;
-            ws.role = m.role;
             ws.id = "p" + ++n;
             r.peers.set(ws.id, ws);
             send(ws, { t: "joined", id: ws.id });
-            send(r.host, { t: "peer", id: ws.id, role: m.role });
+            send(r.host, { t: "peer", id: ws.id });
           } else if (m.t === "signal") {
             const r = rooms.get(ws.room);
             if (!r) return;
