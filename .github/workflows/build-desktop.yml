@@ -47,7 +47,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: LinkCast-${{ matrix.target }}
-          path: dist/*
+          path: |
+            dist/*.exe
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.dmg
+            dist/*.zip
           if-no-files-found: error
 
   release:
